@@ -1,5 +1,5 @@
-saml-idp:
-   build: .
-   ports:
-    - "7000:7000"
-   net: "host"
+services:
+  saml-idp:
+    build: .
+    ports:
+      - "7001:7001"

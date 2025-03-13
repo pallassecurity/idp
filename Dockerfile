@@ -3,7 +3,7 @@ FROM node:latest
 ADD ./package.json package.json
 RUN npm install
 
-EXPOSE 7000 7000
+EXPOSE 7001 7001
 
 # ADD ./node_modules node_modules
 ADD ./lib lib
@@ -14,4 +14,12 @@ ADD ./idp-public-cert.pem idp-public-cert.pem
 ADD ./idp-private-key.pem idp-private-key.pem
 ADD ./public public
 
-ENTRYPOINT [ "node",  "app.js", "--acs", "https://foo.okta.com/auth/saml20/example", "--aud", "https://www.okta.com/saml2/service-provider/spf5aFRRXFGIMAYXQPNV" ]
+ENTRYPOINT [ "node",  "app.js", "--issuer", "urn:pallas:idp", "--acsUrl", "https://dev-42599363.okta.com/sso/saml2/0oantt4kqfFygloDu5d7", "--aud", "https://www.okta.com/saml2/service-provider/spzxhlfkyzkwtwidfbxj", "--cert", "idp-public-cert.pem", "--key", "idp-private-key.pem", "--host", "0.0.0.0", "--port", "7001" ]
+
+# --acsUrl https://trial-4744604.okta.com/sso/saml2/0oaoryjzjrwQpdXnj697 \
+# --audience https://www.okta.com/saml2/service-provider/spowpcfarawhczoqgvei \
+# --host 0.0.0.0 \
+# --port 7000 \
+# --configFile /home/ubuntu/dchen/saml-idp/config-idp.js \
+# --cert /home/ubuntu/dchen/saml-idp/idp-public-cert.pem \
+# --key /home/ubuntu/dchen/saml-idp/idp-private-key.pem
