@@ -646,25 +646,56 @@ function _runServer(argv) {
       }
       handleSignIn(req, res);
 
-      // const isPallasSessionValid = await requestSessionValidation(loginHint);
+      const isPallasSessionValid = await requestSessionValidation(loginHint);
       if (isPallasSessionValid) {
-        handleSingIn(req, res);
+        handleSignIn(req, res);
       } else {
         // trigger pallas auth
+        triggerPallasAuth(req, res);
       }
       // return showUser(req, res, next);
     });
   };
 
+  const cache = [];
+
+  const triggerPallasAuth = (req, res) => {
+    cache.push({ req, res });
+    res.render("loading");
+  };
+
+  app.post("/pallas-auth-results", handlePallasAuthResult);
+
+  async function handlePallasAuthResult(req, res) {
+    try {
+      const body = req.body;
+      const didSucceed = body.success;
+      if (didSucceed) {
+        const { req: cachedReq, res: cachedRes } = cache.at(-1);
+        handleSignIn(cachedReq, cachedRes);
+      } else {
+        res.json({
+          status: 401,
+          message: "authentication failed",
+        });
+      }
+    } catch (error) {
+      console.error("error in handlePallasAuthResult(): ", error);
+    }
+  }
+
   const requestSessionValidation = async (loginHint) => {
     try {
-      const res = await fetch(
-        "http://host.docker.internal:4000/api/sessions/validate",
-        {
-          method: "POST",
-          body: JSON.stringify({ email: loginHint }),
-        }
-      );
+      // const res = await fetch(
+      //   "http://host.docker.internal:4000/api/sessions/validate",
+      //   {
+      //     method: "POST",
+      //     body: JSON.stringify({ email: loginHint }),
+      //   }
+      // );
+      const res = {
+        status: 400,
+      };
       console.log("response from ext-server session validation is: ", res);
       return res.status === 200;
     } catch (error) {

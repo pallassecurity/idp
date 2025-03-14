@@ -52,6 +52,12 @@
     if (!window.messageListenerAdded) {
       window.addEventListener("message", (message) => {
         console.log("Message data:", message.data);
+        const data = message.data;
+        if (data.target === "IDP") { // handles message back to window after the webauthn
+          if (data.success) {
+            
+          }
+        }
       });
 
       // Set a flag to ensure it doesn't get added again
