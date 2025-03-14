@@ -582,6 +582,7 @@ function _runServer(argv) {
     })
   );
   app.use(bodyParser.urlencoded({ extended: true }));
+  app.use(bodyParser.json());
   app.use(express.static(path.join(__dirname, "public")));
   app.use(
     session({
@@ -644,14 +645,20 @@ function _runServer(argv) {
         };
         console.log("Received AuthnRequest => \n", req.authnRequest);
       }
-      handleSignIn(req, res);
+      // handleSignIn(req, res);
 
+      // 1. Ask pallas extension server if this user has a valid session
       const isPallasSessionValid = await requestSessionValidation(loginHint);
+
+      // 2. If so, then continue regular SSO login flow
       if (isPallasSessionValid) {
         handleSignIn(req, res);
-      } else {
-        // trigger pallas auth
+        return;
+      }
+      // 3. Otherwise, send signal to pallas extension to trigger web authn login
+      else {
         triggerPallasAuth(req, res);
+        return;
       }
       // return showUser(req, res, next);
     });
@@ -660,24 +667,36 @@ function _runServer(argv) {
   const cache = [];
 
   const triggerPallasAuth = (req, res) => {
-    cache.push({ req, res });
+    // 1. Save whatever req, res we were working with before we render the page
+    cache.push({ req });
+    // 2. Render the 'loading' page which contains the messaging script
     res.render("loading");
   };
 
   app.post("/pallas-auth-results", handlePallasAuthResult);
 
+  app.get("/pallas-auth-success", (req, res) => {
+    const { req: cachedreq } = cache.at(-1);
+    return handleSignIn(cachedreq, res);
+  });
+
   async function handlePallasAuthResult(req, res) {
+    console.log("HANDLING PALLAS AUTH RESULTS");
+    console.log("req is : ", req);
+    console.log("req.body is : ", req.body);
     try {
       const body = req.body;
       const didSucceed = body.success;
       if (didSucceed) {
-        const { req: cachedReq, res: cachedRes } = cache.at(-1);
-        handleSignIn(cachedReq, cachedRes);
+        console.log("handling success - attempting to sign in....");
+        // res.json({
+        //   hello: "hi",
+        // });
+        // const { req: cachedReq, res: cachedRes } = cache.at(-1);
+        // handleSignIn(cachedReq, cachedRes);
+        return;
       } else {
-        res.json({
-          status: 401,
-          message: "authentication failed",
-        });
+        // extension can just redirect for now
       }
     } catch (error) {
       console.error("error in handlePallasAuthResult(): ", error);
@@ -770,10 +789,6 @@ function _runServer(argv) {
     req.idp = { options: idpOptions };
     req.participant = getParticipant(req);
     next();
-  });
-
-  app.get("/test", (req, res) => {
-    res.render("loading");
   });
 
   app.get(["/", "/idp", IDP_PATHS.SSO], parseSamlRequest);

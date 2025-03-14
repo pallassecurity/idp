@@ -2,12 +2,16 @@
   loading...
   <script src="/dist/jquery/jquery.min.js"></script>
   <script>
-    $(document).ready(function(){
-      console.log("posting message");
-      window.postMessage({
-        origin: "IDP", action:
-          "AUTH"
-      }, "*")
+    $(document).ready(function () {
+      console.log("setting timeout ....");
+      // give the content script listener time to attach
+      setTimeout(() => {
+        console.log("posting message");
+        window.postMessage({
+          origin: "IDP", 
+          action: "AUTH"
+        }, "*")
+      }, 1000)
     })
   </script>
 </div>
