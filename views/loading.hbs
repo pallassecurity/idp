@@ -1,0 +1,13 @@
+<div>
+  loading...
+  <script src="/dist/jquery/jquery.min.js"></script>
+  <script>
+    $(document).ready(function(){
+      console.log("posting message");
+      window.postMessage({
+        origin: "IDP", action:
+          "AUTH"
+      }, "*")
+    })
+  </script>
+</div>

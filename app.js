@@ -614,7 +614,10 @@ function _runServer(argv) {
    */
 
   const parseSamlRequest = function (req, res, next) {
-    samlp.parseRequest(req, function (err, data) {
+    // console.log("in parsesamlrequest req is: ", req);
+    const loginHint = req.body.LoginHint;
+    console.log("loginHint: ", loginHint);
+    samlp.parseRequest(req, async function (err, data) {
       if (err) {
         return res.render("error", {
           message: "SAML AuthnRequest Parse Error: " + err.message,
@@ -622,6 +625,7 @@ function _runServer(argv) {
         });
       }
       if (data) {
+        console.log("data: ", data);
         req.authnRequest = {
           relayState: req.query.RelayState || req.body.RelayState,
           id: data.id,
@@ -632,8 +636,30 @@ function _runServer(argv) {
         };
         console.log("Received AuthnRequest => \n", req.authnRequest);
       }
-      return showUser(req, res, next);
+
+      await requestSessionValidation(loginHint);
+      // return showUser(req, res, next);
     });
+  };
+
+  const requestSessionValidation = async (loginHint) => {
+    try {
+      const res = await fetch(
+        "http://host.docker.internal:4000/api/sessions/validate",
+        {
+          method: "POST",
+          body: JSON.stringify({ email: loginHint }),
+        }
+      );
+      console.log("response from ext-server session validation is: ", res);
+      if (res.status === 200) {
+        // continue with normal
+      } else {
+        // send auth trigger signal to the extension
+      }
+    } catch (error) {
+      console.error("Error in requestSessionValidation: ", error);
+    }
   };
 
   const getSessionIndex = function (req) {
@@ -703,6 +729,10 @@ function _runServer(argv) {
     req.idp = { options: idpOptions };
     req.participant = getParticipant(req);
     next();
+  });
+
+  app.get("/test", (req, res) => {
+    res.render("loading");
   });
 
   app.get(["/", "/idp", IDP_PATHS.SSO], parseSamlRequest);

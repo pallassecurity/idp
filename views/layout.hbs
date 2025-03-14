@@ -15,7 +15,7 @@
   </head>
   <body>
     <!-- Static navbar -->
-    <nav class="navbar navbar-default">
+    {{!-- <nav class="navbar navbar-default">
       <div class="container-fluid">
         <div class="navbar-header">
         <a class="navbar-brand" href="/metadata"><i class="fa fa-key"><span>Simple SAML Identity Provider ({{idp.issuer}})</span></i></a>
@@ -29,7 +29,7 @@
             <li class="active"><a href="/settings"><i class="fa fa-cog"><span>Settings</span></i></a></li>
           </ul>
         </div><!--/.nav-collapse -->
-    </nav>
+    </nav> --}}
 
 
     <div class="container">
@@ -46,7 +46,18 @@
   <script src="/dist/underscore/underscore.js"></script>
 
   <script>
+    console.log("FOR SOME REASON HERE")
+        // Check if the listener has already been added
   $(document).ready(function() {
+    if (!window.messageListenerAdded) {
+      window.addEventListener("message", (message) => {
+        console.log("Message data:", message.data);
+      });
+
+      // Set a flag to ensure it doesn't get added again
+      window.messageListenerAdded = true;
+    }
+   
     jQuery.validator.setDefaults({
       errorPlacement: function(error, element) {
         if(element.parent().hasClass('input-prepend') || element.parent().hasClass('input-append')) {
