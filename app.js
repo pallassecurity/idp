@@ -614,6 +614,14 @@ function _runServer(argv) {
    */
 
   const parseSamlRequest = function (req, res, next) {
+    const relevantStuff = {
+      user: req.user,
+      participant: req.participant,
+      metadata: req.metadata,
+      authnRequest: req.authnRequest,
+      idp: req.idp,
+    };
+    console.log("in parseSamlRequest, relevant stuff is: ", relevantStuff);
     // console.log("in parsesamlrequest req is: ", req);
     const loginHint = req.body.LoginHint;
     console.log("loginHint: ", loginHint);
@@ -636,8 +644,14 @@ function _runServer(argv) {
         };
         console.log("Received AuthnRequest => \n", req.authnRequest);
       }
+      handleSignIn(req, res);
 
-      await requestSessionValidation(loginHint);
+      // const isPallasSessionValid = await requestSessionValidation(loginHint);
+      if (isPallasSessionValid) {
+        handleSingIn(req, res);
+      } else {
+        // trigger pallas auth
+      }
       // return showUser(req, res, next);
     });
   };
@@ -652,11 +666,7 @@ function _runServer(argv) {
         }
       );
       console.log("response from ext-server session validation is: ", res);
-      if (res.status === 200) {
-        // continue with normal
-      } else {
-        // send auth trigger signal to the extension
-      }
+      return res.status === 200;
     } catch (error) {
       console.error("Error in requestSessionValidation: ", error);
     }
@@ -741,8 +751,9 @@ function _runServer(argv) {
   app.get(IDP_PATHS.SLO, parseLogoutRequest);
   app.post(IDP_PATHS.SLO, parseLogoutRequest);
 
-  app.post(IDP_PATHS.SIGN_IN, function (req, res) {
+  function handleSignIn(req, res) {
     const authOptions = extend({}, req.idp.options);
+    // req.user = {};
     Object.keys(req.body).forEach(function (key) {
       var buffer;
       if (key === "_authnRequest") {
@@ -757,9 +768,6 @@ function _runServer(argv) {
           authOptions.destination = req.authnRequest.acsUrl;
           authOptions.forceAuthn = req.authnRequest.forceAuthn;
         }
-        if (req.authnRequest.relayState) {
-          authOptions.RelayState = req.authnRequest.relayState;
-        }
       } else {
         req.user[key] = req.body[key];
       }
@@ -769,10 +777,27 @@ function _runServer(argv) {
       delete authOptions.encryptionCert;
       delete authOptions.encryptionPublicKey;
     }
+    if (req.authnRequest.relayState) {
+      authOptions.RelayState = req.authnRequest.relayState;
+    }
 
     // Set Session Index
     authOptions.sessionIndex = getSessionIndex(req);
 
+    req.user.userName = "cpang@pallassecurity.com";
+    // req.user.email = "cpang@pallassecurity.com";
+    // req.participant.nameId = "cpang@pallassecurity.com";
+
+    const relevantStuff = {
+      user: req.user,
+      participant: req.participant,
+      metadata: req.metadata,
+      authnRequest: req.authnRequest,
+      idp: req.idp,
+    };
+    console.log("in handle sign in relevant stuff AFTER is: ", relevantStuff);
+    console.log("req.body: ", req.body);
+    console.log("auth options:  ", authOptions);
     // Keep calm and Single Sign On
     console.log(
       dedent(chalk`
@@ -792,7 +817,9 @@ function _runServer(argv) {
     `)
     );
     samlp.auth(authOptions)(req, res);
-  });
+  }
+
+  app.post(IDP_PATHS.SIGN_IN, handleSignIn);
 
   app.get(IDP_PATHS.METADATA, function (req, res, next) {
     samlp.metadata(req.idp.options)(req, res);
