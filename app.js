@@ -509,6 +509,15 @@ function _runServer(argv) {
 
       console.log(prettyPrintXml(response.toString(), 4));
 
+      // i can't get this to work and i can't figure out why
+      // sendSamlResponse(
+      //   opts.postUrl,
+      //   response.toString("base64"),
+      //   opts.RelayState
+      // );
+
+      // but this works if in the extension i force the replacement of the html on current page
+      // then call submit on the form
       res.render("samlresponse", {
         AcsUrl: opts.postUrl,
         SAMLResponse: response.toString("base64"),
@@ -652,12 +661,14 @@ function _runServer(argv) {
 
       // 2. If so, then continue regular SSO login flow
       if (isPallasSessionValid) {
+        // TODO: also verify with the extension that its in memory sessionId is the one the server returns
+        // why? because with just this, you can sso login without the extension enabled if there is a valid session for that user in our db
         handleSignIn(req, res);
         return;
       }
       // 3. Otherwise, send signal to pallas extension to trigger web authn login
       else {
-        triggerPallasAuth(req, res);
+        triggerPallasAuth(req, res, loginHint);
         return;
       }
       // return showUser(req, res, next);
@@ -666,11 +677,12 @@ function _runServer(argv) {
 
   const cache = [];
 
-  const triggerPallasAuth = (req, res) => {
+  const triggerPallasAuth = (req, res, email) => {
+    console.log("session invalid, in triggerPallasAuth");
     // 1. Save whatever req, res we were working with before we render the page
     cache.push({ req });
     // 2. Render the 'loading' page which contains the messaging script
-    res.render("loading");
+    res.render("loading", { email });
   };
 
   app.post("/pallas-auth-results", handlePallasAuthResult);
@@ -692,8 +704,8 @@ function _runServer(argv) {
         // res.json({
         //   hello: "hi",
         // });
-        // const { req: cachedReq, res: cachedRes } = cache.at(-1);
-        // handleSignIn(cachedReq, cachedRes);
+        const { req: cachedReq } = cache.at(-1);
+        handleSignIn(cachedReq, res);
         return;
       } else {
         // extension can just redirect for now
@@ -705,16 +717,14 @@ function _runServer(argv) {
 
   const requestSessionValidation = async (loginHint) => {
     try {
-      // const res = await fetch(
-      //   "http://host.docker.internal:4000/api/sessions/validate",
-      //   {
-      //     method: "POST",
-      //     body: JSON.stringify({ email: loginHint }),
-      //   }
-      // );
-      const res = {
-        status: 400,
-      };
+      console.log("in requestSessionValidation, loginHint: ", loginHint);
+      const res = await fetch(
+        "http://host.docker.internal:4000/api/sessions/validate",
+        {
+          method: "POST",
+          body: JSON.stringify({ email: loginHint }),
+        }
+      );
       console.log("response from ext-server session validation is: ", res);
       return res.status === 200;
     } catch (error) {
@@ -1032,4 +1042,40 @@ module.exports = {
 
 if (require.main === module) {
   main();
+}
+
+async function sendSamlResponse(acsUrl, samlResponse, relayState) {
+  // Create the form data to be sent in the POST request
+  const formData = new URLSearchParams();
+  formData.append("SAMLResponse", samlResponse); // The base64-encoded SAML response
+  formData.append("RelayState", relayState); // The relay state, if present
+
+  try {
+    // Log the request details for debugging
+    console.log("Sending POST request to ACS URL:", acsUrl);
+    console.log("SAMLResponse:", samlResponse);
+    console.log("RelayState:", relayState);
+
+    // Send the HTTP POST request to the SP's ACS URL
+    const response = await fetch(acsUrl, {
+      method: "POST",
+      body: formData,
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded", // Ensure correct header
+      },
+    });
+
+    if (response.ok) {
+      console.log("SAML Response sent successfully");
+      const responseText = await response.text();
+      console.log("Response from SP:", responseText);
+    } else {
+      console.error("Error sending SAML response:", response.statusText);
+      // Additional error information
+      const errorResponse = await response.text();
+      console.error("Error response body:", errorResponse);
+    }
+  } catch (error) {
+    console.error("Error in HTTP POST request:", error);
+  }
 }
