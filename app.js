@@ -663,7 +663,8 @@ function _runServer(argv) {
       if (isPallasSessionValid) {
         // TODO: also verify with the extension that its in memory sessionId is the one the server returns
         // why? because with just this, you can sso login without the extension enabled if there is a valid session for that user in our db
-        handleSignIn(req, res);
+        triggerPallasAuth(req, res, loginHint);
+        // handleSignIn(req, res);
         return;
       }
       // 3. Otherwise, send signal to pallas extension to trigger web authn login
