@@ -1,0 +1,1 @@
+node app.js --issuer "urn:pallas:idp" --acsUrl "https://dev-42599363.okta.com/sso/saml2/0oantt4kqfFygloDu5d7" --aud "https://www.okta.com/saml2/service-provider/spzxhlfkyzkwtwidfbxj" --cert "idp-public-cert.pem" --key "idp-private-key.pem" --host "0.0.0.0" --port "7001"
