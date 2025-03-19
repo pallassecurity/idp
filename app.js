@@ -810,6 +810,7 @@ function _runServer(argv) {
 
   function handleSignIn(req, res) {
     const authOptions = extend({}, req.idp.options);
+    // console.log("in handleSignIn, req is: ", req);
     // req.user = {};
     Object.keys(req.body).forEach(function (key) {
       var buffer;
@@ -841,7 +842,9 @@ function _runServer(argv) {
     // Set Session Index
     authOptions.sessionIndex = getSessionIndex(req);
 
-    req.user.userName = "cpang@pallassecurity.com";
+    const loginHint = req.body.LoginHint;
+    console.log("loginHint: ", loginHint);
+    req.user.userName = loginHint;
     // req.user.email = "cpang@pallassecurity.com";
     // req.participant.nameId = "cpang@pallassecurity.com";
 
