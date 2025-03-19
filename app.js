@@ -803,6 +803,7 @@ function _runServer(argv) {
   });
 
   app.get(["/", "/idp", IDP_PATHS.SSO], parseSamlRequest);
+  app.get("/hello", (req, res) => res.json({ hello: "hello" }));
   app.post(["/", "/idp", IDP_PATHS.SSO], parseSamlRequest);
 
   app.get(IDP_PATHS.SLO, parseLogoutRequest);
