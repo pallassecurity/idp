@@ -592,15 +592,8 @@ function _runServer(argv) {
   );
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use(bodyParser.json());
-  // app.use(express.static(path.join(__dirname, "public"))); // for local
+  app.use(express.static(path.join(__dirname, "public")));
 
-  /**
-   * for devbox routing
-   */
-  app.use("/idp", express.static(path.join(__dirname, "public")));
-  // Serve files from public/css/ under /idp/css/
-  app.use("/idp/css", express.static(path.join(__dirname, "public", "css")));
-  app.use("/idp/dist", express.static(path.join(__dirname, "public", "dist")));
   app.use(
     session({
       secret:
