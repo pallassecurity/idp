@@ -1,21 +1,21 @@
 <div>
   Loading... 
   You must have Pallas extension installed - talk to your admin
-  <script src="/dist/jquery/jquery.min.js"></script>
   <script>
-    $(document).ready(function () {
-      console.log("setting timeout ....");
-      // give the content script listener time to attach
-      const email = "{{email}}"; // Handlebars syntax to insert email from the backend or frontend context.
+    document.addEventListener("DOMContentLoaded", function () {
+      
+      const email = "{{email}}"; 
       const msg = {
-          origin: "IDP", 
-          action: "VALIDATE",
-          data: {email}
-        }
-      setTimeout(() => {
+        origin: "IDP", 
+        action: "VALIDATE",
+        data: { email }
+      };
+
+      console.log("setting timeout ....");
+      setTimeout(() => { // TODO: test removal of this
         console.log("posting message: ", msg);
-        window.postMessage(msg, "*")
-      }, 1000)
-    })
+        window.postMessage(msg, "*");
+      }, 1000);
+    });
   </script>
 </div>
