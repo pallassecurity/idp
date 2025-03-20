@@ -12,10 +12,12 @@
       };
 
       console.log("setting timeout ....");
+      // without this, it immedaitely posts message and the content script may or may not have been properly injected into the page yet
+      // there might be a better way to handle this but setting delay works
+      setTimeout(() => { 
         console.log("posting message: ", msg);
         window.postMessage(msg, "*");
-    //  {{!-- setTimeout(() => { // TODO: test removal of this --}}
-     // {{!-- }, 1000); --}}
+      }, 1000);
     });
   </script>
 </div>
