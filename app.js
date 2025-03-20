@@ -592,7 +592,8 @@ function _runServer(argv) {
   );
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use(bodyParser.json());
-  app.use(express.static(path.join(__dirname, "public")));
+  // app.use(express.static(path.join(__dirname, "public"))); // for local
+  app.use("/idp", express.static(path.join(__dirname, "public"))); // for devbox
   app.use(
     session({
       secret:
